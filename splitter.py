@@ -3,19 +3,14 @@
 from dataclasses import dataclass, field
 import os
 from typing import TextIO
+from typing_extensions import List
 
 import click
-# from ffmpeg import FFmpeg
 from sh import Command
 
-# (2 * 60) + 22
 # ffmpeg -ss 0 -i input.mp3  -to 142  output.mp3
 # ffmpeg -ss 0 -i Motor\ Detectives\ 1\ \[4rj8sRdD04s\].mp3 -to 142 "Home Sweet Home (Tom Legenhausen).mp3"
 # time ffmpeg -i Motor\ Detectives\ 1\ \[4rj8sRdD04s\].mp3 -f null -
-#
-
-# f = FFmpeg()
-
 
 def get_track_length(track_filename: str) -> float:
     ffmpeg = Command("ffmpeg")
@@ -44,8 +39,8 @@ class AlbumData():
 
 
 def hh_mm_ss_to_s(input: str) -> float:
-    segs = input.split(":")
-    hours: int = 0
+    segs: List[str] = input.split(":")
+    hours = "0"
     if len(segs) == 3:
         hours, minutes, seconds = segs
     else:
@@ -77,7 +72,6 @@ def read_input_data(datafile: TextIO, total_length: float, album_name: str, inpu
     return album
 
 def split_into_tracks(album: AlbumData) -> None:
-    # ffmpeg -ss 0 -i Motor\ Detectives\ 1\ \[4rj8sRdD04s\].mp3 -to 142 "Home Sweet Home (Tom Legenhausen).mp3"
     ffmpeg = Command("ffmpeg")
     for track in album.tracks:
         outfile = f"{album.output_dir}/{track.name.replace('/', '_')}.mp3"
@@ -90,17 +84,10 @@ def split_into_tracks(album: AlbumData) -> None:
 @click.option('--name', help="Album Name", required=True)
 @click.option("--out", help="output directory", required=True)
 def cli(inputfile, datafile, name, out):
-
-    # print(inputfile)
-    # print(datafile)
-    # read_input_data(datafile)
     total_length = get_track_length(inputfile)
     album = read_input_data(datafile, total_length, name, inputfile, out)
-    # print(album)
     os.makedirs(out, exist_ok=True)
     split_into_tracks(album)
 
 if __name__ == "__main__":
-    # print(hh_mm_ss_to_s("01:01:01"))
-    # main()
     cli() # pyright: ignore[reportCallIssue]
