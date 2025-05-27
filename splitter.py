@@ -58,7 +58,7 @@ def read_input_data(datafile: TextIO, total_length: float, album_name: str, inpu
     for idx, line in enumerate(lines):
         if idx == 0:
             start_time = 0
-            name = line.split(" ", 1)[1]
+            name = line.split(" ", 2)[2]
         else:
             start_time = hh_mm_ss_to_s(line.split(" ")[1])
             name = line.split(" ", 2)[-1]
