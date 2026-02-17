@@ -4,15 +4,16 @@ from dataclasses import dataclass, field
 import os
 import sys
 from typing import TextIO
-from typing_extensions import List
 
 import click
-from mutagen.id3 import ID3, TIT2, TALB, TRCK, TPE1
-from sh import Command
+from mutagen.id3 import ID3
+from mutagen.id3._frames import TIT2, TALB, TRCK, TPE1
+from sh import Command  # pyright: ignore[reportMissingTypeStubs]
 
 # ffmpeg -ss 0 -i input.mp3  -to 142  output.mp3
 # ffmpeg -ss 0 -i Motor\ Detectives\ 1\ \[4rj8sRdD04s\].mp3 -to 142 "Home Sweet Home (Tom Legenhausen).mp3"
 # time ffmpeg -i Motor\ Detectives\ 1\ \[4rj8sRdD04s\].mp3 -f null -
+
 
 def get_track_length(track_filename: str) -> float:
     print("Getting track length....")
@@ -25,40 +26,48 @@ def get_track_length(track_filename: str) -> float:
     time_str = last_line.split(" ")[1].replace("time=", "")
     return hh_mm_ss_to_s(time_str)
 
+
 @dataclass
-class TrackData():
+class TrackData:
     name: str
     length: float
     start_time: float
     track_num: str
-    path: str = ''
-    artist: str = ''
+    path: str = ""
+    artist: str = ""
 
 
 @dataclass
-class AlbumData():
+class AlbumData:
     name: str
     total_length: float
     input_file: str
     output_dir: str
     parse: bool
     tracks: list[TrackData] = field(default_factory=list)
-    artist: str = ''
+    artist: str = ""
 
 
 def hh_mm_ss_to_s(input: str) -> float:
-    segs: List[str] = input.split(":")
+    segs: list[str] = input.split(":")
     hours = "0"
     if len(segs) == 3:
         hours, minutes, seconds = segs
     else:
-       minutes, seconds = segs
+        minutes, seconds = segs
     out: int = int(hours) * (60 * 60)
     out += int(minutes) * 60
-    return out +  float(seconds)
+    return out + float(seconds)
 
 
-def read_input_data(datafile: TextIO, total_length: float, album_name: str, input_file: str, output_dir: str, parse: bool) -> AlbumData:
+def read_input_data(
+    datafile: TextIO,
+    total_length: float,
+    album_name: str,
+    input_file: str,
+    output_dir: str,
+    parse: bool,
+) -> AlbumData:
     lines = datafile.readlines()
     lines = [x.strip() for x in lines]
     album = AlbumData(album_name, total_length, input_file, output_dir, parse)
@@ -73,7 +82,7 @@ def read_input_data(datafile: TextIO, total_length: float, album_name: str, inpu
         if idx == len(lines) - 1:
             end_time = total_length
         else:
-            end_time = hh_mm_ss_to_s(lines[idx+1].split(" ")[1])
+            end_time = hh_mm_ss_to_s(lines[idx + 1].split(" ")[1])
         track_length = end_time - start_time
         track_num = line.split(" ")[0]
         track = TrackData(name, track_length, start_time, track_num)
@@ -98,19 +107,31 @@ def tag_track(track: TrackData, album: AlbumData) -> None:
         audio.add(TPE1(encoding=3, text=artist))
     audio.save()
 
+
 def split_into_tracks(album: AlbumData) -> None:
     ffmpeg = Command("ffmpeg")
     for track in album.tracks:
-        outfile = f"{album.output_dir}/{track.track_num}. {track.name.replace('/', '_')}.mp3"
+        outfile = (
+            f"{album.output_dir}/{track.track_num}. {track.name.replace('/', '_')}.mp3"
+        )
         track.path = outfile
         print(f"Writing {track.name}....")
-        ffmpeg("-ss", track.start_time, "-i", album.input_file, "-to", track.length, outfile)
+        ffmpeg(
+            "-ss",
+            track.start_time,
+            "-i",
+            album.input_file,
+            "-to",
+            track.length,
+            outfile,
+        )
         tag_track(track, album)
+
 
 @click.command()
 @click.argument("inputfile", type=str)
 @click.argument("datafile", type=click.File("r"))
-@click.option('--name', help="Album Name", required=True)
+@click.option("--name", help="Album Name", required=True)
 @click.option("--out", help="output directory", required=True)
 @click.option("--artist", help="album artist", required=False)
 @click.option("--parse", help="parse track artist from name", is_flag=True)
@@ -125,5 +146,6 @@ def cli(inputfile, datafile, name, out, artist, parse):
     os.makedirs(out, exist_ok=True)
     split_into_tracks(album)
 
+
 if __name__ == "__main__":
-    cli() # pyright: ignore[reportCallIssue]
+    cli()  # pyright: ignore[reportCallIssue]
