@@ -39,8 +39,7 @@ You can split it like this:
 Here's the script's help message:
 
 ```text
-
-(yt_splitter) dandante@dandantes-Mac-mini ~/d/yt_splitter (main)> ./splitter.py --help            (base) 
+$ ./splitter.py --help            (base) 
 Usage: splitter.py [OPTIONS] INPUTFILE DATAFILE
 
 Options:
