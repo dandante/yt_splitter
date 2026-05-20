@@ -39,7 +39,7 @@ You can split it like this:
 Here's the script's help message:
 
 ```text
-$ ./splitter.py --help            (base) 
+$ ./splitter.py --help
 Usage: splitter.py [OPTIONS] INPUTFILE DATAFILE
 
 Options:
